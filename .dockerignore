@@ -1,0 +1,35 @@
+# Version control
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv
+venv
+env
+
+# Test / dev artifacts
+.pytest_cache
+.coverage
+htmlcov
+*.egg-info
+dist
+build
+
+# Django local
+staticfiles/
+*.log
+
+# Secrets — never copy into the image
+.env
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml
+.dockerignore

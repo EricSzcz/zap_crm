@@ -1,0 +1,67 @@
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-zap_crm}
+      POSTGRES_USER: ${DB_USER:-zap_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-zap_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"          # host 5433 → container 5432 (avoids conflict with other PG instances)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zap_user} -d ${DB_NAME:-zap_crm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6380:6379"          # host 6380 → container 6379 (avoids conflict with other Redis instances)
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Django / Daphne ────────────────────────────────────────────────────────
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432        # container-internal port — always 5432 inside Compose
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Celery worker ──────────────────────────────────────────────────────────
+  worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432        # container-internal port — always 5432 inside Compose
+      REDIS_URL: redis://redis:6379/0
+    command: celery -A zap_crm worker -l info
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

@@ -1,0 +1,22 @@
+{% load tz %}
+<div class="msg-row {{ message.direction }}">
+  <div class="msg-bubble">
+    <div>{{ message.content }}</div>
+    <div class="msg-meta d-flex justify-content-end gap-1">
+      {% if message.created_at %}
+        <span>{{ message.created_at|time:"H:i" }}</span>
+      {% endif %}
+      {% if message.direction == "outbound" %}
+        {% if message.status == "read" %}
+          <span class="status-icon text-primary">✓✓</span>
+        {% elif message.status == "delivered" %}
+          <span class="status-icon">✓✓</span>
+        {% elif message.status == "sent" %}
+          <span class="status-icon">✓</span>
+        {% elif message.status == "failed" %}
+          <span class="status-icon text-danger" title="Failed to send">✗</span>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>

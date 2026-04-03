@@ -1,0 +1,69 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Assignments — Zap CRM{% endblock %}
+
+{% block panel_content %}
+<h4 class="mb-4">Agent ↔ Account Assignments</h4>
+
+<div class="row g-4">
+  <!-- Create form -->
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <h6 class="mb-3 fw-semibold">Assign Agent to Account</h6>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label fw-medium small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary w-100">Assign</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current assignments -->
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Agent</th>
+              <th>WhatsApp Account</th>
+              <th>Assigned</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for assignment in assignments %}
+            <tr>
+              <td>{{ assignment.user.username }}</td>
+              <td>
+                {{ assignment.account.name }}
+                {% if not assignment.account.is_active %}
+                  <span class="badge bg-secondary ms-1">inactive</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">{{ assignment.assigned_at|date:"M d, Y" }}</td>
+              <td class="text-end">
+                <form method="post" action="{% url 'admin_panel:assignment_delete' assignment.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No assignments yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

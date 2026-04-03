@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Conversations — Zap CRM{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+  <div class="col-lg-7 col-md-9 mx-auto">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0 fw-semibold">My Conversations</h5>
+      <span class="badge bg-primary">{{ conversations|length }}</span>
+    </div>
+
+    {% if not conversations %}
+      <div class="text-center text-muted py-5">
+        <i class="bi bi-chat-dots fs-1 d-block mb-2"></i>
+        No conversations yet. Waiting for inbound messages…
+      </div>
+    {% else %}
+      <div class="list-group shadow-sm">
+        {% for conv in conversations %}
+        <a href="{% url 'chat:detail' conv.pk %}"
+           class="list-group-item list-group-item-action d-flex justify-content-between align-items-start py-3">
+          <div class="me-3">
+            <div class="fw-semibold">{{ conv.contact.display_name }}</div>
+            <small class="text-muted">{{ conv.whatsapp_account.name }}</small>
+          </div>
+          <div class="text-end text-nowrap">
+            {% if conv.status == "open" %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle">open</span>
+            {% else %}
+              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">closed</span>
+            {% endif %}
+            {% if conv.last_message_at %}
+              <div class="text-muted" style="font-size:.75rem;">{{ conv.last_message_at|timesince }} ago</div>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

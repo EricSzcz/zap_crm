@@ -1,0 +1,62 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Agents — Zap CRM{% endblock %}
+
+{% block panel_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Agents</h4>
+  <a href="{% url 'admin_panel:user_create' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-person-plus me-1"></i>Create Agent
+  </a>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Name</th>
+          <th>Assigned Accounts</th>
+          <th>Status</th>
+          <th>Joined</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for agent in agents %}
+        <tr>
+          <td class="fw-medium">{{ agent.username }}</td>
+          <td>{{ agent.email|default:"—" }}</td>
+          <td>{{ agent.get_full_name|default:"—" }}</td>
+          <td>
+            {% for a in agent.account_assignments.all %}
+              <span class="badge bg-secondary me-1">{{ a.account.name }}</span>
+            {% empty %}<span class="text-muted small">None</span>{% endfor %}
+          </td>
+          <td>
+            {% if agent.is_active %}
+              <span class="badge bg-success">Active</span>
+            {% else %}
+              <span class="badge bg-danger">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ agent.date_joined|date:"M d, Y" }}</td>
+          <td class="text-end">
+            <form method="post" action="{% url 'admin_panel:user_toggle' agent.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button class="btn btn-sm {% if agent.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                {% if agent.is_active %}Deactivate{% else %}Activate{% endif %}
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No agents yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

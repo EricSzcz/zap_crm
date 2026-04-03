@@ -1,0 +1,79 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Conversation Monitor — Zap CRM{% endblock %}
+
+{% block panel_content %}
+<h4 class="mb-3">Conversation Monitor</h4>
+
+<!-- Filters -->
+<form method="get" class="row g-2 mb-4">
+  <div class="col-md-3">
+    <select name="account" class="form-select form-select-sm">
+      <option value="">All accounts</option>
+      {% for acc in accounts %}
+        <option value="{{ acc.pk }}" {% if selected_account == acc.pk|stringformat:"s" %}selected{% endif %}>
+          {{ acc.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="agent" class="form-select form-select-sm">
+      <option value="">All agents</option>
+      {% for agent in agents %}
+        <option value="{{ agent.pk }}" {% if selected_agent == agent.pk|stringformat:"s" %}selected{% endif %}>
+          {{ agent.username }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <select name="status" class="form-select form-select-sm">
+      <option value="">All statuses</option>
+      <option value="open" {% if selected_status == "open" %}selected{% endif %}>Open</option>
+      <option value="closed" {% if selected_status == "closed" %}selected{% endif %}>Closed</option>
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+    <a href="{% url 'admin_panel:conversation_monitor' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+  </div>
+</form>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Contact</th>
+          <th>Account</th>
+          <th>Agent</th>
+          <th>Status</th>
+          <th>Last Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for conv in conversations %}
+        <tr>
+          <td>{{ conv.contact }}</td>
+          <td>{{ conv.whatsapp_account.name }}</td>
+          <td>{{ conv.assigned_agent.username|default:"—" }}</td>
+          <td>
+            {% if conv.status == "open" %}
+              <span class="badge bg-success">Open</span>
+            {% else %}
+              <span class="badge bg-secondary">Closed</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">
+            {% if conv.last_message_at %}{{ conv.last_message_at|date:"M d, H:i" }}{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No conversations match the filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

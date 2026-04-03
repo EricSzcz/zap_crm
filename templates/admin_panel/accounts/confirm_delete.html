@@ -1,0 +1,20 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Delete Account — Zap CRM{% endblock %}
+
+{% block panel_content %}
+<h4 class="mb-4">Delete WhatsApp Account</h4>
+<div class="card border-danger border-0 shadow-sm" style="max-width:480px;">
+  <div class="card-body p-4">
+    <p class="mb-1">Are you sure you want to delete:</p>
+    <p class="fw-bold fs-5">{{ account.name }}</p>
+    <p class="text-muted small">Phone Number ID: <code>{{ account.phone_number_id }}</code></p>
+    <p class="text-danger small">This will also remove all assignments linked to this account.</p>
+    <form method="post" class="d-flex gap-2 mt-3">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, Delete</button>
+      <a href="{% url 'admin_panel:account_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

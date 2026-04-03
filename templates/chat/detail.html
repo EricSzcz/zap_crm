@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}{{ conversation.contact.display_name }} — Zap CRM{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Override container padding for the chat layout */
+  .chat-layout { height: calc(100vh - 56px); overflow: hidden; }
+  .conv-sidebar { height: 100%; overflow-y: auto; border-right: 1px solid #dee2e6; background:#fff; }
+  .chat-panel { height: 100%; display: flex; flex-direction: column; }
+  .chat-header { flex-shrink: 0; border-bottom: 1px solid #dee2e6; background:#fff; padding: .75rem 1rem; }
+  .chat-window { flex: 1; overflow-y: auto; padding: 1rem; background: #f0f2f5; }
+  .chat-footer { flex-shrink: 0; border-top: 1px solid #dee2e6; background:#fff; padding: .75rem 1rem; }
+  .conv-item { border-bottom: 1px solid #f0f0f0; padding: .65rem 1rem; cursor:pointer; }
+  .conv-item:hover, .conv-item.active { background: #e8f4ff; }
+  .msg-row { display: flex; margin-bottom: .5rem; }
+  .msg-row.inbound { justify-content: flex-start; }
+  .msg-row.outbound { justify-content: flex-end; }
+  .msg-bubble { max-width: 68%; padding: .45rem .75rem; border-radius: 8px; font-size: .9rem; line-height: 1.4; }
+  .msg-row.inbound .msg-bubble { background: #fff; border-radius: 0 8px 8px 8px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .msg-row.outbound .msg-bubble { background: #d9fdd3; border-radius: 8px 0 8px 8px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .msg-meta { font-size: .7rem; color: #888; margin-top: 2px; }
+  .status-icon { font-size: .7rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-layout row g-0" style="margin-left:-12px;margin-right:-12px;">
+
+  <!-- ── Sidebar: conversation list ────────────────────────────────── -->
+  <div class="col-md-3 conv-sidebar d-none d-md-block">
+    <div class="p-2 border-bottom">
+      <a href="{% url 'chat:list' %}" class="text-decoration-none text-dark fw-semibold small">
+        <i class="bi bi-arrow-left me-1"></i> All conversations
+      </a>
+    </div>
+    {% for conv in conversations %}
+    <a href="{% url 'chat:detail' conv.pk %}"
+       class="conv-item text-decoration-none text-dark d-block {% if conv.pk == conversation.pk %}active{% endif %}">
+      <div class="fw-semibold small text-truncate">{{ conv.contact.display_name }}</div>
+      <div class="text-muted" style="font-size:.72rem;">{{ conv.whatsapp_account.name }}</div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ── Chat panel ────────────────────────────────────────────────── -->
+  <div class="col-md-9 chat-panel">
+
+    <!-- Header -->
+    <div class="chat-header d-flex justify-content-between align-items-center">
+      <div>
+        <span class="fw-semibold">{{ conversation.contact.display_name }}</span>
+        <span class="text-muted small ms-2">{{ conversation.contact.phone_number }}</span>
+        {% if conversation.status == "open" %}
+          <span class="badge bg-success ms-2">open</span>
+        {% else %}
+          <span class="badge bg-secondary ms-2">closed</span>
+        {% endif %}
+      </div>
+      <small class="text-muted">{{ conversation.whatsapp_account.name }}</small>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-window" id="messages">
+      {% for msg in messages %}
+        {% include "chat/partials/message.html" with message=msg %}
+      {% endfor %}
+    </div>
+
+    <!-- Send form -->
+    <div class="chat-footer">
+      {% if conversation.status == "open" %}
+      <form id="send-form"
+            hx-post="{% url 'chat:send' conversation.pk %}"
+            hx-target="#messages"
+            hx-swap="beforeend"
+            hx-on::after-request="this.reset(); document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;"
+            class="d-flex gap-2">
+        {% csrf_token %}
+        <input type="text"
+               name="text"
+               id="chat-input"
+               class="form-control"
+               placeholder="Type a message…"
+               autocomplete="off"
+               required />
+        <button type="submit" class="btn btn-success px-3">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </form>
+      {% else %}
+        <p class="text-muted text-center mb-0 small">This conversation is closed.</p>
+      {% endif %}
+    </div>
+
+  </div><!-- /chat-panel -->
+</div><!-- /chat-layout -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const messagesDiv = document.getElementById("messages");
+
+  // Scroll to bottom on load
+  if (messagesDiv) {
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  // WebSocket: receive inbound messages pushed by the server
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const wsUrl = `${protocol}://${window.location.host}/ws/chat/{{ conversation.pk }}/`;
+  let ws;
+
+  function connect() {
+    ws = new WebSocket(wsUrl);
+
+    ws.onmessage = function (e) {
+      const data = JSON.parse(e.data);
+      if (data.type !== "chat.message") return;
+      if (data.direction !== "inbound") return; // outbound already added by HTMX
+
+      const row = document.createElement("div");
+      row.className = "msg-row inbound";
+      row.innerHTML = `
+        <div class="msg-bubble">
+          <div>${escapeHtml(data.content)}</div>
+          <div class="msg-meta">${data.contact_name || ""}</div>
+        </div>`;
+      messagesDiv.appendChild(row);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    };
+
+    ws.onclose = function () {
+      // Reconnect after 3 s on unexpected close
+      setTimeout(connect, 3000);
+    };
+  }
+
+  connect();
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+})();
+</script>
+{% endblock %}

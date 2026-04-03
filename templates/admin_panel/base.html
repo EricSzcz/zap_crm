@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-0">
+  <!-- Sidebar -->
+  <div class="col-auto sidebar d-flex flex-column p-3" style="min-width:220px;">
+    <div class="mb-4 px-2">
+      <span class="fw-bold text-white fs-5">Admin Panel</span>
+    </div>
+    <nav class="nav flex-column gap-1">
+      <a href="{% url 'admin_panel:dashboard' %}"
+         class="nav-link px-3 py-2 {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+      </a>
+      <a href="{% url 'admin_panel:account_list' %}"
+         class="nav-link px-3 py-2 {% if 'account' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-whatsapp me-2"></i>WhatsApp Accounts
+      </a>
+      <a href="{% url 'admin_panel:user_list' %}"
+         class="nav-link px-3 py-2 {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-people me-2"></i>Agents
+      </a>
+      <a href="{% url 'admin_panel:assignment_list' %}"
+         class="nav-link px-3 py-2 {% if 'assignment' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-link-45deg me-2"></i>Assignments
+      </a>
+      <a href="{% url 'admin_panel:conversation_monitor' %}"
+         class="nav-link px-3 py-2 {% if 'conversation' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-chat-dots me-2"></i>Conversations
+      </a>
+    </nav>
+  </div>
+
+  <!-- Main content -->
+  <div class="col p-4">
+    {% block panel_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}
