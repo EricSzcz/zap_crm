@@ -1,5 +1,7 @@
 # Zap CRM
 
+Personal project developed independently by Eric Szczepanik to demonstrate API architecture patterns applied in production environments.
+
 A multi-user WhatsApp CRM built with Django 4.2, Django Channels, Celery, and HTMX. Supports role-based access (admin/agent), encrypted WhatsApp token storage, real-time WebSocket chat, and async task processing.
 
 ---
